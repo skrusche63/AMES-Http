@@ -18,6 +18,9 @@ package de.kp.ames.http;
  *
  */
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.security.KeyStore;
 
@@ -30,6 +33,7 @@ import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.entity.BufferedHttpEntity;
+import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
@@ -45,6 +49,9 @@ public class HttpClient {
 	/** Label for content-type header */
 	private static final String CONTENT_TYPE_LABEL = "Content-type";
 
+	/** Label for content-length header */
+	private static final String CONTENT_LENGTH_LABEL = "Content-Length";
+	
 	/** HTTP content type submitted in HTTP POST request for SOAP calls */
 	private static final String JSON_CONTENT_TYPE = "application/json; charset=UTF-8";
 
@@ -84,7 +91,41 @@ public class HttpClient {
 		return new Response(httpEntity.getContent(), response.getStatusLine().getStatusCode());
 
 	}
-	
+
+	/**
+	 * @param url
+	 * @return
+	 * @throws Exception
+	 */
+	public Response doPost(String url) throws Exception {
+
+		/*
+		 * Create HttpPost
+		 */
+		URI uri = createUri(url);
+		HttpPost httpPost = new HttpPost(uri);
+		
+		/*
+		 * Set header
+		 */
+		httpPost.setHeader(CONTENT_TYPE_LABEL, JSON_CONTENT_TYPE);
+
+	    /*
+	     * Execute request
+	     */
+	    HttpResponse response =  httpClient.execute(httpPost);
+		HttpEntity httpEntity = new BufferedHttpEntity(response.getEntity());
+
+		return new Response(httpEntity.getContent(), response.getStatusLine().getStatusCode());
+
+	}
+
+	/**
+	 * @param url
+	 * @param data
+	 * @return
+	 * @throws Exception
+	 */
 	public Response doPost(String url, String data) throws Exception {
 
 		/*
@@ -92,8 +133,15 @@ public class HttpClient {
 		 */
 		URI uri = createUri(url);
 		HttpPost httpPost = new HttpPost(uri);
+		
+		/*
+		 * Set header
+		 */
+		byte[] bytes = data.getBytes();
+		int length = bytes.length;
 
 		httpPost.setHeader(CONTENT_TYPE_LABEL, JSON_CONTENT_TYPE);
+		httpPost.setHeader(CONTENT_LENGTH_LABEL, String.valueOf(length));
 
 		HttpEntity entity = new StringEntity(data);
 		httpPost.setEntity(entity);
@@ -101,6 +149,31 @@ public class HttpClient {
 	    /*
 	     * Execute request
 	     */
+	    HttpResponse response =  httpClient.execute(httpPost);
+		HttpEntity httpEntity = new BufferedHttpEntity(response.getEntity());
+
+		return new Response(httpEntity.getContent(), response.getStatusLine().getStatusCode());
+
+	}
+
+	public Response doPost(String url, InputStream stream, String mimetype) throws Exception {
+
+		/*
+		 * Create HttpPost
+		 */
+		URI uri = createUri(url);
+		HttpPost httpPost = new HttpPost(uri);
+
+		/*
+		 * Set header
+		 */
+		httpPost.setHeader(CONTENT_TYPE_LABEL, mimetype);
+
+		long length = getLengthFromInputStream(stream);
+
+		HttpEntity entity = new InputStreamEntity(stream, length);
+		httpPost.setEntity(entity);
+		
 	    HttpResponse response =  httpClient.execute(httpPost);
 		HttpEntity httpEntity = new BufferedHttpEntity(response.getEntity());
 
@@ -191,6 +264,34 @@ public class HttpClient {
 		return socketFactory;
 		
 	}
+
+	private long getLengthFromInputStream(InputStream is) {
+		
+		byte[] bytes = getByteArrayFromInputStream(is);
+		return Long.valueOf(bytes.length);
+		
+	}
 	
+	private byte[] getByteArrayFromInputStream(InputStream is) {
+    	
+    	ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+
+    	byte[] buffer = new byte[1024];
+        int len;
+        
+        try {
+        	while ((len = is.read(buffer, 0, buffer.length)) != -1) {
+        		baos.write(buffer, 0, len);
+        	}
+        	//is.close();
+
+        } catch (IOException e) {
+        	e.printStackTrace();
+        }
+        
+        return baos.toByteArray();
+    
+    }
+
 }
 
