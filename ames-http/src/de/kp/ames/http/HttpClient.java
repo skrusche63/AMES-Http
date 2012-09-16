@@ -141,7 +141,7 @@ public class HttpClient {
 		int length = bytes.length;
 
 		httpPost.setHeader(CONTENT_TYPE_LABEL, JSON_CONTENT_TYPE);
-		httpPost.setHeader(CONTENT_LENGTH_LABEL, String.valueOf(length));
+//		httpPost.setHeader(CONTENT_LENGTH_LABEL, String.valueOf(length));
 
 		HttpEntity entity = new StringEntity(data);
 		httpPost.setEntity(entity);

@@ -38,7 +38,9 @@ public class KeyStoreUtil {
         
         try {
         	keystore.load(stream, HttpConstants.CLIENTSTORE_KEYPASS.toCharArray());
-        
+
+            System.out.println("====> KeyStoreUtil.getClientStore: Loaded server certificates: " + keystore.size());
+
         } finally {
             stream.close();
         }
@@ -60,6 +62,8 @@ public class KeyStoreUtil {
         
         try {
         	keystore.load(stream, HttpConstants.TRUSTSTORE_KEYPASS.toCharArray());
+        	
+            System.out.println("====> KeyStoreUtil.getTrustStore: Loaded server certificates: " + keystore.size());
         
         } finally {
             stream.close();
